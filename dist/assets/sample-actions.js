@@ -1,5 +1,5 @@
 (function () {
-  var samplePath = "/sample.csv";
+  var samplePath = new URL("../sample.csv", document.currentScript.src).href;
   var sampleCsvFallback =
     "sku,img1,img2\n" +
     "889214485489-LGP,https://images.sellbrite.com/production/234668/889214485489-LGP/fe63cfed-780d-5072-a151-aeac59a2be14.jpg,https://images.sellbrite.com/production/234668/889214485489-LGP/c53e847d-dae3-5205-9350-4f32da5d4e52.jpg\n";
@@ -7,6 +7,7 @@
     headers: [],
     rows: []
   };
+  var loadingSample = false;
 
   function findCsvInput() {
     return document.querySelector('input[type="file"][accept*="csv"]');
@@ -81,6 +82,11 @@
   }
 
   async function readSelectedCsv() {
+    if (loadingSample) {
+      updateColumnPreviews();
+      return;
+    }
+
     var input = findCsvInput();
     var file = input && input.files && input.files[0];
 
@@ -198,7 +204,7 @@
     return button;
   }
 
-  async function loadSampleCsv(button) {
+  function loadSampleCsv(button) {
     var input = findCsvInput();
     if (!input) return;
 
@@ -206,12 +212,14 @@
     button.textContent = "Loading sample...";
 
     try {
+      loadingSample = true;
+      csvState = parseCsv(sampleCsvFallback);
+
       var blob = new Blob([sampleCsvFallback], { type: "text/csv" });
       var file = new File([blob], "sample.csv", { type: "text/csv" });
       var transfer = new DataTransfer();
       transfer.items.add(file);
       input.files = transfer.files;
-      csvState = parseCsv(sampleCsvFallback);
       input.dispatchEvent(new Event("change", { bubbles: true }));
       window.setTimeout(updateColumnPreviews, 0);
     } catch (error) {
@@ -219,10 +227,14 @@
       button.textContent = "Sample unavailable";
       return;
     } finally {
+      loadingSample = false;
+      button.disabled = false;
+      button.textContent = "Load sample CSV";
+
       window.setTimeout(function () {
         button.disabled = false;
         button.textContent = "Load sample CSV";
-      }, 900);
+      }, 100);
     }
   }
 
