@@ -4,6 +4,8 @@
     headers: [],
     rows: []
   };
+  var lastFile = null;
+  var mountPollCount = 0;
 
   function findCsvInput() {
     return document.querySelector('input[type="file"][accept*="csv"]');
@@ -87,8 +89,15 @@
       return;
     }
 
+    if (file === lastFile) {
+      updateColumnPreviews();
+      return;
+    }
+
+    lastFile = file;
+
     try {
-      csvState = parseCsv(await file.text());
+      csvState = parseCsv(await file.slice(0, 65536).text());
     } catch (error) {
       console.error(error);
       csvState = { headers: [], rows: [] };
@@ -157,7 +166,7 @@
     }
 
     preview.classList.remove("is-empty");
-    img.src = url;
+    if (img.getAttribute("src") !== url) img.src = url;
     img.alt = label + " sample image";
     urlText.textContent = url;
   }
@@ -221,12 +230,20 @@
     bindColumnPreviewEvents();
   }
 
-  var observer = new MutationObserver(mountEnhancements);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  function startMountPolling() {
+    mountEnhancements();
+
+    var interval = window.setInterval(function () {
+      mountPollCount += 1;
+      mountEnhancements();
+
+      if (mountPollCount >= 80) window.clearInterval(interval);
+    }, 250);
+  }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", mountEnhancements);
+    document.addEventListener("DOMContentLoaded", startMountPolling);
   } else {
-    mountEnhancements();
+    startMountPolling();
   }
 })();
