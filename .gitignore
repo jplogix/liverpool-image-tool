@@ -22,6 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
 # Generated artifact too large for GitHub
 output/ZA-product-images.zip
+
