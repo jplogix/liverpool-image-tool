@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FileArchive, Loader2, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileArchive, Loader2, Upload, Zap } from 'lucide-react'
 import Papa from 'papaparse'
 import type { ParseResult } from 'papaparse'
 import { useEffect, useMemo, useState } from 'react'
@@ -7,6 +7,7 @@ import { Button } from './components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
 import { Input } from './components/ui/input'
 import { Label } from './components/ui/label'
+import { SampleMapping } from './components/SampleMapping'
 
 const FRAME_WIDTH = 940
 const FRAME_HEIGHT = 1215
@@ -14,7 +15,6 @@ const HORIZONTAL_PADDING = 10
 const OUTPUT_MIME_TYPE = 'image/jpeg'
 const OUTPUT_QUALITY = 0.95
 const SOFT_ROW_LIMIT = 500
-const WARNING_ROW_LIMIT = 750
 const HARD_ROW_LIMIT = 1000
 
 type CsvRecord = Record<string, string>
@@ -434,6 +434,31 @@ function App() {
     }
   }
 
+  async function loadSample() {
+    setGlobalError('')
+    resetOutputs()
+    setSelectedFileName('sample.csv')
+    try {
+      const response = await fetch('/sample.csv')
+      const text = await response.text()
+      Papa.parse<Record<string, string>>(text, {
+        header: true,
+        skipEmptyLines: 'greedy',
+        complete: (results) => {
+          const headers = Array.from(
+            new Set((results.meta.fields ?? []).map(normalizeHeader).filter(Boolean)),
+          )
+          setHeaders(headers)
+          setCsvRows(results.data.map((row) => cleanRow(row, headers)))
+          setCsvWarnings(results.errors.map((error) => `Row ${error.row ?? '?'}: ${error.message}`))
+          setMapping(inferMapping(headers, results.data))
+        },
+      })
+    } catch {
+      setGlobalError('Failed to load sample CSV.')
+    }
+  }
+
   function updateMapping(key: keyof ColumnMapping, value: string) {
     resetOutputs()
     setMapping((current) => ({ ...current, [key]: value }))
@@ -556,30 +581,30 @@ function App() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-4 py-12 md:px-8">
-      <header className="space-y-4">
-        <div className="inline-flex items-center rounded-full bg-[hsl(var(--primary)/0.1)] px-3 py-1 text-xs font-medium text-[hsl(var(--primary))] ring-1 ring-inset ring-[hsl(var(--primary)/0.2)]">
-          v1.2.0 • Image Pipeline Fixed
-        </div>
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl text-[hsl(var(--foreground))]">
-          Product Image Zip Builder
-        </h1>
-        <p className="max-w-3xl text-base text-[hsl(var(--muted-foreground))] md:text-lg leading-relaxed">
-          Upload any CSV, choose the SKU, front-facing image, and angled image columns, then export
-          a zip of 940x1215 JPGs named SKU-1, SKU-2, and SKU-3.
-        </p>
-        <div className="flex flex-wrap gap-4 pt-2">
-          <div className="flex items-center gap-2 text-xs font-medium text-[hsl(var(--muted-foreground))]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Recommended: {SOFT_ROW_LIMIT} rows
+      <header className="space-y-4 border-b pb-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[hsl(var(--primary))] text-white shadow-lg shadow-[hsl(var(--primary)/0.3)]">
+              <Zap className="h-7 w-7 fill-current" />
+            </div>
+            <div className="space-y-0.5">
+              <h1 className="text-3xl font-black tracking-tighter text-[hsl(var(--primary))] uppercase">
+                Zip <span className="text-[hsl(var(--foreground))]">Generator</span>
+              </h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))] opacity-70">
+                Professional Image Pipeline
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[hsl(var(--muted-foreground))]">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            Warning: {WARNING_ROW_LIMIT} rows
-          </div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[hsl(var(--muted-foreground))]">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-            Hard Limit: {HARD_ROW_LIMIT} rows
-          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadSample}
+            className="rounded-full border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+          >
+            <FileArchive className="mr-2 h-4 w-4" />
+            Load Sample
+          </Button>
         </div>
       </header>
 
@@ -611,7 +636,9 @@ function App() {
                   <CheckCircle2 className="h-4 w-4" />
                   Loaded: {selectedFileName}
                 </div>
-              ) : null}
+              ) : (
+                <SampleMapping />
+              )}
             </div>
 
             {headers.length > 0 ? (
@@ -633,6 +660,12 @@ function App() {
                       </option>
                     ))}
                   </select>
+                  {mapping.skuColumn && csvRows[0]?.[mapping.skuColumn] && (
+                    <div className="mt-2 flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                      <span className="h-1 w-1 rounded-full bg-[hsl(var(--primary))]" />
+                      Preview: {csvRows[0][mapping.skuColumn]}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -652,6 +685,25 @@ function App() {
                       </option>
                     ))}
                   </select>
+                  {mapping.frontColumn && csvRows[0]?.[mapping.frontColumn] && (
+                    <div className="mt-2 flex items-center gap-3 overflow-hidden rounded-lg border bg-[hsl(var(--muted)/0.3)] p-2">
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-white shadow-sm">
+                        <img 
+                          src={proxyImageUrl(csvRows[0][mapping.frontColumn])} 
+                          alt="Front preview" 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col truncate">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                          Preview
+                        </span>
+                        <span className="truncate text-[10px] font-medium opacity-60">
+                          {csvRows[0][mapping.frontColumn]}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-[10px] font-medium text-[hsl(var(--muted-foreground))]">Exports as SKU-1.jpg</p>
                 </div>
 
@@ -672,6 +724,25 @@ function App() {
                       </option>
                     ))}
                   </select>
+                  {mapping.angledColumn && csvRows[0]?.[mapping.angledColumn] && (
+                    <div className="mt-2 flex items-center gap-3 overflow-hidden rounded-lg border bg-[hsl(var(--muted)/0.3)] p-2">
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-white shadow-sm">
+                        <img 
+                          src={proxyImageUrl(csvRows[0][mapping.angledColumn])} 
+                          alt="Angled preview" 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col truncate">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                          Preview
+                        </span>
+                        <span className="truncate text-[10px] font-medium opacity-60">
+                          {csvRows[0][mapping.angledColumn]}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-[10px] font-medium text-[hsl(var(--muted-foreground))]">
                     Exports as SKU-2 & SKU-3 (flipped)
                   </p>
@@ -692,7 +763,7 @@ function App() {
                   </>
                 ) : (
                   <>
-                    <FileArchive className="mr-2 h-5 w-5" />
+                    <FileArchive className="mr-2 h-5 w-5 text-blue-300" />
                     Generate Zip
                   </>
                 )}
@@ -815,8 +886,14 @@ function App() {
                 className="group relative"
               >
                 <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-12 items-center rounded-2xl bg-[hsl(var(--foreground))] px-6 text-xl font-black text-[hsl(var(--background))] shadow-xl transition-transform group-hover:scale-[1.02]">
-                    {row.sku}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex h-12 items-center rounded-2xl bg-[hsl(var(--foreground))] px-6 text-xl font-black text-[hsl(var(--background))] shadow-xl transition-transform group-hover:scale-[1.02]">
+                      {row.sku}
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                      <span className="h-1 w-1 rounded-full bg-[hsl(var(--primary))]" />
+                      {row.outputs.length} images generated
+                    </div>
                   </div>
                   {row.errors.length > 0 ? (
                     <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-700 ring-1 ring-red-200">

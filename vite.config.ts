@@ -9,7 +9,8 @@ function imageProxy(): Plugin {
 		configureServer(server) {
 			server.middlewares.use("/image-proxy", async (request, response) => {
 				const requestUrl = new URL(request.url ?? "", "http://localhost");
-				const imageUrl = requestUrl.searchParams.get("url");
+				const imageUrlEncoded = requestUrl.searchParams.get("url");
+      const imageUrl = imageUrlEncoded ? decodeURIComponent(imageUrlEncoded) : null;
 
 				if (!imageUrl) {
 					response.statusCode = 400;

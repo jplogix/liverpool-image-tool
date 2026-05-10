@@ -26,7 +26,8 @@ function send(response, statusCode, body, headers = {}) {
 }
 
 async function handleImageProxy(requestUrl, response) {
-  const imageUrl = requestUrl.searchParams.get('url')
+  const imageUrlEncoded = requestUrl.searchParams.get('url');
+  const imageUrl = imageUrlEncoded ? decodeURIComponent(imageUrlEncoded) : null;
 
   if (!imageUrl) {
     send(response, 400, 'Missing image URL.')

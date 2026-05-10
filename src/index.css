@@ -1,43 +1,33 @@
 @import "tailwindcss";
 
 :root {
-	--background: 35 56% 97%;
-	--foreground: 18 20% 18%;
-	--card: 0 0% 100%;
-	--card-foreground: 18 20% 18%;
-	--border: 26 20% 84%;
-	--input: 24 18% 90%;
-	--primary: 16 63% 43%;
-	--primary-foreground: 0 0% 100%;
-	--muted: 30 25% 92%;
-	--muted-foreground: 24 12% 40%;
-	--ring: 16 63% 43%;
-	--radius: 0.8rem;
+  --background: 210 100% 98%; /* light blueish background */
+  --foreground: 210 20% 20%; /* dark blue text */
+  --card: 0 0% 100%;
+  --card-foreground: 210 20% 20%;
+  --border: 210 15% 85%;
+  --input: 210 10% 95%;
+  --primary: 212 100% 48%; /* Vercel Blue */
+  --primary-foreground: 0 0% 100%;
+  --muted: 210 20% 92%;
+  --muted-foreground: 210 12% 40%;
+  --ring: 212 100% 48%;
+  --radius: 0.8rem;
 }
 
 * {
-	box-sizing: border-box;
-	border-color: hsl(var(--border));
+  box-sizing: border-box;
+  border-color: hsl(var(--border));
 }
 
 body {
-	margin: 0;
-	min-height: 100vh;
-	background:
-		radial-gradient(
-			circle at 14% 18%,
-			rgba(255, 213, 177, 0.35),
-			transparent 38%
-		),
-		radial-gradient(
-			circle at 82% 24%,
-			rgba(255, 241, 189, 0.45),
-			transparent 34%
-		), hsl(var(--background));
-	color: hsl(var(--foreground));
-	font-family: "Space Grotesk", "Avenir Next", "Trebuchet MS", sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Space Grotesk", "Avenir Next", "Trebuchet MS", sans-serif;
 }
 
 a {
-	color: inherit;
+  color: inherit;
 }

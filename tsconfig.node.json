@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "tsBuildInfoFile": "./.yarn/.tsbuildinfo/tsconfig.node.tsbuildinfo",
     "target": "es2023",
     "lib": ["ES2023"],
     "module": "esnext",
@@ -11,6 +11,8 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "moduleDetection": "force",
     "noEmit": true,
 
