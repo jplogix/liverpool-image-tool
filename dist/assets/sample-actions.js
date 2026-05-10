@@ -1,13 +1,9 @@
 (function () {
   var samplePath = new URL("../sample.csv", document.currentScript.src).href;
-  var sampleCsvFallback =
-    "sku,img1,img2\n" +
-    "889214485489-LGP,https://images.sellbrite.com/production/234668/889214485489-LGP/fe63cfed-780d-5072-a151-aeac59a2be14.jpg,https://images.sellbrite.com/production/234668/889214485489-LGP/c53e847d-dae3-5205-9350-4f32da5d4e52.jpg\n";
   var csvState = {
     headers: [],
     rows: []
   };
-  var loadingSample = false;
 
   function findCsvInput() {
     return document.querySelector('input[type="file"][accept*="csv"]');
@@ -82,11 +78,6 @@
   }
 
   async function readSelectedCsv() {
-    if (loadingSample) {
-      updateColumnPreviews();
-      return;
-    }
-
     var input = findCsvInput();
     var file = input && input.files && input.files[0];
 
@@ -196,48 +187,6 @@
     if (selects.front || selects.angled) updateColumnPreviews();
   }
 
-  function makeButton(label, kind) {
-    var button = document.createElement("button");
-    button.type = "button";
-    button.className = "sample-action sample-action-" + kind;
-    button.textContent = label;
-    return button;
-  }
-
-  function loadSampleCsv(button) {
-    var input = findCsvInput();
-    if (!input) return;
-
-    button.disabled = true;
-    button.textContent = "Loading sample...";
-
-    try {
-      loadingSample = true;
-      csvState = parseCsv(sampleCsvFallback);
-
-      var blob = new Blob([sampleCsvFallback], { type: "text/csv" });
-      var file = new File([blob], "sample.csv", { type: "text/csv" });
-      var transfer = new DataTransfer();
-      transfer.items.add(file);
-      input.files = transfer.files;
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      window.setTimeout(updateColumnPreviews, 0);
-    } catch (error) {
-      console.error(error);
-      button.textContent = "Sample unavailable";
-      return;
-    } finally {
-      loadingSample = false;
-      button.disabled = false;
-      button.textContent = "Load sample CSV";
-
-      window.setTimeout(function () {
-        button.disabled = false;
-        button.textContent = "Load sample CSV";
-      }, 100);
-    }
-  }
-
   function mountActions() {
     if (document.querySelector(".sample-actions")) return;
 
@@ -250,16 +199,18 @@
     var actions = document.createElement("div");
     actions.className = "sample-actions";
 
-    var loadButton = makeButton("Load sample CSV", "primary");
-    loadButton.addEventListener("click", function () {
-      loadSampleCsv(loadButton);
-    });
+    var loadButton = document.createElement("a");
+    loadButton.className = "sample-action sample-action-primary";
+    loadButton.href = samplePath;
+    loadButton.download = "sample.csv";
+    loadButton.textContent = "Download sample CSV";
 
     var downloadLink = document.createElement("a");
     downloadLink.className = "sample-action sample-action-secondary";
     downloadLink.href = samplePath;
-    downloadLink.download = "sample.csv";
-    downloadLink.textContent = "Download sample";
+    downloadLink.target = "_blank";
+    downloadLink.rel = "noreferrer";
+    downloadLink.textContent = "Open sample";
 
     actions.append(loadButton, downloadLink);
     target.appendChild(actions);
