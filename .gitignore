@@ -8,9 +8,12 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
 dist-ssr
 *.local
+
+# This repository deploys the prebuilt static artifact with Docker.
+!dist/
+!dist/**
 
 # Editor directories and files
 .vscode/*
